@@ -1,6 +1,25 @@
 # coding: UTF-8
 from math import sqrt
+import os.path
 
+# 从csv文件中获得数据集
+def getDataset():
+    path = os.path.join(os.getcwd(), "movielens")
+    movies = {}
+    with open(path + "/movies.csv", "r") as f:
+        for i, l in enumerate(f.xreadlines()):
+            if i == 0: continue
+            idx, mvname = l.split(",")[:2]
+            movies[idx] = mvname
+
+    prefs = {}
+    with open(path + "/ratings.csv", "r") as f:
+        for i, l in enumerate(f.xreadlines()):
+            if i == 0: continue
+            user, mvIdx, rating = l.split(",")[:3]
+            prefs.setdefault(user, {})
+            prefs[user][movies[mvIdx]] = float(rating)
+    return prefs
 
 # user-based collaboration filter
 # -------------------------------
@@ -93,8 +112,11 @@ def transformod(od):
 # 构造相似度从高到低的列表
 def calSimilarItems(od2, n):
     result = {}
+    c = 0
     for item in od2:
         result[item] =topN(od2, item, n, calPearson)
+        c += 1
+        if c % 100 == 0: print "%d / %d" % (c, len(od2))
     return result
 
 # 为用户进行推荐
@@ -117,57 +139,69 @@ def recommandItByItems(od, similarItems, user):
     result.sort(key=lambda s:s[1], reverse=True)
     return result
 
+if __name__ == "__main__":
+    # 获得基于用户的数据集
+    d = getDataset()
+    # 翻转,获得基于物品的数据集
+    d2 = transformod(d)
+    # 建立每件物品相似度排前10的字典{item:(simi_item, similarity), (..), ..}
+    simiItems = calSimilarItems(d2, 10)
+    # 根据某人已评论物品,假设为5个,则最多有50个最相似的选择;
+    # 计算每件相似物品的加权和（相似度*评分）/（相似度之和）,可以得到最多50件相似物品的推荐排行
+    result = recommandItByItems(d, simiItems, "1")[:10]
+    print result
 
-critics = {
-    'Lisa Rose': {
-        'Lady in the Water': 2.5,
-        'Snakes on a Plane': 3.5,
-        'Just My Luck': 3.0,
-        'Superman Returns': 3.5,
-        'You, Me and Dupree': 2.5,
-        'The Night Listener': 3.0,
-    },
-    'Gene Seymour': {
-        'Lady in the Water': 3.0,
-        'Snakes on a Plane': 3.5,
-        'Just My Luck': 1.5,
-        'Superman Returns': 5.0,
-        'You, Me and Dupree': 3.0,
-        'The Night Listener': 3.5,
-    },
-    'Micheal Phillips': {
-        'Lady in the Water': 2.5,
-        'Snakes on a Plane': 3.0,
-        'Just My Luck': 3.5,
-        'The Night Listener': 4.0,
-    },
-    'Claudia Puid': {
-        'Snakes on a Plane': 3.5,
-        'Just My Luck': 3.0,
-        'Superman Returns': 4.0,
-        'The Night Listener': 4.5,
-    },
-    'Mick Lasalle': {
-        'Lady in the Water': 3.0,
-        'Snakes on a Plane': 4.0,
-        'Just My Luck': 2.0,
-        'Superman Returns': 3.0,
-        'You, Me and Dupree': 3.5,
-    },
-    'Jack Matthews': {
-        'Lady in the Water': 3.0,
-        'Snakes on a Plane': 4.0,
-        'Just My Luck': 2.0,
-        'Superman Returns': 5.0,
-        'You, Me and Dupree': 3.5,
-        'The Night Listener': 3.0,
-    },
-    'Toby': {
-        'Snakes on a Plane': 4.5,
-        'Superman Returns': 4.0,
-        'You, Me and Dupree': 1.0,
-    },
-}
+
+# critics = {
+#     'Lisa Rose': {
+#         'Lady in the Water': 2.5,
+#         'Snakes on a Plane': 3.5,
+#         'Just My Luck': 3.0,
+#         'Superman Returns': 3.5,
+#         'You, Me and Dupree': 2.5,
+#         'The Night Listener': 3.0,
+#     },
+#     'Gene Seymour': {
+#         'Lady in the Water': 3.0,
+#         'Snakes on a Plane': 3.5,
+#         'Just My Luck': 1.5,
+#         'Superman Returns': 5.0,
+#         'You, Me and Dupree': 3.0,
+#         'The Night Listener': 3.5,
+#     },
+#     'Micheal Phillips': {
+#         'Lady in the Water': 2.5,
+#         'Snakes on a Plane': 3.0,
+#         'Just My Luck': 3.5,
+#         'The Night Listener': 4.0,
+#     },
+#     'Claudia Puid': {
+#         'Snakes on a Plane': 3.5,
+#         'Just My Luck': 3.0,
+#         'Superman Returns': 4.0,
+#         'The Night Listener': 4.5,
+#     },
+#     'Mick Lasalle': {
+#         'Lady in the Water': 3.0,
+#         'Snakes on a Plane': 4.0,
+#         'Just My Luck': 2.0,
+#         'Superman Returns': 3.0,
+#         'You, Me and Dupree': 3.5,
+#     },
+#     'Jack Matthews': {
+#         'Lady in the Water': 3.0,
+#         'Snakes on a Plane': 4.0,
+#         'Just My Luck': 2.0,
+#         'Superman Returns': 5.0,
+#         'You, Me and Dupree': 3.5,
+#         'The Night Listener': 3.0,
+#     },
+#     'Toby': {
+#         'Snakes on a Plane': 4.5,
+#         'Superman Returns': 4.0,
+#         'You, Me and Dupree': 1.0,
+#     },
+# }
 
 
 
