@@ -139,17 +139,43 @@ def recommandItByItems(od, similarItems, user):
     result.sort(key=lambda s:s[1], reverse=True)
     return result
 
+# homework
+# ex3.
+# 编写一个预先计算用户相似度的函数,为每个用户创建一个topN相似度的列表
+def calSimilarPersons(od, n):
+    result = {}
+    c = 0
+    for person in od:
+        result[person] = topN(od, person, n, calPearson)
+        c += 1
+        if c % 100 == 0: print "%d / %d" % (c, len(od))
+    return result
+
+# 根据趣味相投的前5名用户,为用户推荐物品
+def recommandItByUsers(od, user, similarPersons):
+    rating_total = {}
+    simi_total = 0
+    for (p, simi) in similarPersons[user]:
+        for (item, score) in od[p].iteritems():
+            if item in od[user]: continue
+            rating_total.setdefault(item, 0)
+            rating_total[item] += simi * score
+
+        simi_total += simi
+
+    result = [(item, rating_total[item] / simi_total) for item in rating_total.keys()]
+    result.sort(key=lambda s:s[1], reverse=True)
+    return result
+
+
+
+
 if __name__ == "__main__":
-    # 获得基于用户的数据集
-    d = getDataset()
-    # 翻转,获得基于物品的数据集
-    d2 = transformod(d)
-    # 建立每件物品相似度排前10的字典{item:(simi_item, similarity), (..), ..}
-    simiItems = calSimilarItems(d2, 10)
-    # 根据某人已评论物品,假设为5个,则最多有50个最相似的选择;
-    # 计算每件相似物品的加权和（相似度*评分）/（相似度之和）,可以得到最多50件相似物品的推荐排行
-    result = recommandItByItems(d, simiItems, "1")[:10]
-    print result
+    o = getDataset()
+    simiUsers = calSimilarPersons(o, 5)
+    r = recommandItByUsers(o, '1', simiUsers)
+    print r
+
 
 
 # critics = {
